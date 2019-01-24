@@ -16,6 +16,8 @@ return [
     'default_language' => 1,
     // count how many language is available if equal(1) do not show the language switch button
     'countLanguage' => 2,
+    // with payment or not
+    'withPayment' => true,
 
 /** End */
 

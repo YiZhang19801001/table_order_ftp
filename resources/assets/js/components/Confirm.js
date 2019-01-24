@@ -15,7 +15,9 @@ export default class Confirm extends Component {
       orderId: "",
       tableId: "",
       isShowConfirm: false,
-      paymentMethod: ""
+      paymentMethod: "",
+      order_no: "",
+      showQrCode: false
     };
 
     this.createQrCode = this.createQrCode.bind(this);
@@ -39,34 +41,13 @@ export default class Confirm extends Component {
       this.setState({ shoppingCartList: this.props.shoppingCartList });
     }
 
-    Echo.channel("tableOrder").listen("payment", e => {
-      if (e.orderId == this.props.orderId && e.userId !== this.props.userId) {
-        if (e.action == "update") {
-          Axios.post(`/table/public/api/initcart`, {
-            order_id: this.props.orderId,
-            cdt: this.props.cdt,
-            v: this.props.v,
-            table_id: this.props.tableNumber,
-            lang: localStorage.getItem("aupos_language_code")
-          })
-            .then(res => {
-              // this.setState({ shoppingCartList: res.data.pending_list });
-              this.props.updateOrderList(res.data.pendingList);
-              this.props.updateHistoryCartList(res.data.historyList);
-              // this.setState({ orderShoppingCartList: res.data.ordered_list });
-            })
-            .catch(err => {
-              window.location.reload();
-            });
-        } else {
-          this.props.updateShoppingCartList(
-            false,
-            e.orderItem,
-            "table",
-            e.action,
-            this.props.orderId,
-            this.props.tableNumber
-          );
+    console.log(this.props.app_conf);
+
+    Echo.channel("tableOrder").listen("UpdateOrder", e => {
+      if (e.orderId == "123456789666undefined") {
+        //this.state.order_no
+        if (e.action === "SUCCEEDED") {
+          this.setState({ showQrCode: true });
         }
       }
     });
@@ -160,24 +141,30 @@ export default class Confirm extends Component {
   }
 
   payment() {
+    var win = window.open("_blank");
+    const today = new Date();
+    const timestamps = Math.floor(today / 1000);
     Axios.post(`/redpay/public/api/payments/create`, {
       version: "1.0",
       mchNo: "77902",
       storeNo: "77911",
-      mchOrderNo: "201815617822464359948002",
-      channel: "ALIPAY",
+      mchOrderNo: `123456789999666${this.props.match.params.orderId}`,
+      channel: this.state.paymentMethod,
       payWay: "BUYER_SCAN_TRX_QRCODE",
       currency: "AUD",
       amount: this.getTotalPrice(),
-      notifyUrl: "http://192.168.1.5/redpay/public/api/listen",
+      notifyUrl: "http://kidsnparty.com.au/redpay/public/api/listen",
       returnUrl: "https://wap.redpayments.com.au/pay/success",
       item: "Clothes",
       quantity: 1,
-      timestamp: 153613188,
+      timestamp: timestamps,
       params: '{"buyerId":285502587945850268}',
       sign: "3598365168a172a2e62bdb14c104de9e"
     }).then(res => {
-      window.location = res.data.data.qrCode;
+      // this.setState({ order_no: res.data.data.mchOrderNo });
+      console.log("timestamps", timestamps);
+      console.log(res.data);
+      win.location = res.data.data.qrCode;
     });
   }
 
@@ -195,7 +182,7 @@ export default class Confirm extends Component {
               type="radio"
               name="payment_method"
               value="ALIPAY"
-              onChange={this.handelPaymentMethodChange}
+              onChange={this.handlePaymentMethodChange}
             />
             <span className="payment-section__check-mark-wrapper">
               <img
@@ -210,7 +197,7 @@ export default class Confirm extends Component {
               type="radio"
               name="payment_method"
               value="ALIPAY"
-              onChange={this.handelPaymentMethodChange}
+              onChange={this.handlePaymentMethodChange}
             />
             <span className="payment-section__check-mark-wrapper">
               <img
@@ -222,7 +209,10 @@ export default class Confirm extends Component {
           </label>
         </div>
         <div className="payment-section__footer">
-          <button className="payment-section__footer-button">
+          <button
+            onClick={this.payment}
+            className="payment-section__footer-button"
+          >
             {this.props.app_conf.payment_button_label}
           </button>
         </div>
@@ -279,7 +269,9 @@ export default class Confirm extends Component {
             </div>
           </div>
         ) : null}
-        {this.props.match.params.mode === "preorder" ? (
+        {this.props.match.params.mode === "preorder" &&
+        this.props.app_conf.withPayment &&
+        this.state.showQrCode ? (
           <div className="confirm__title">
             <img src="/table/public/images/layout/icon_confirm.png" alt="" />
             <span className="confirm__title-text">
@@ -287,7 +279,24 @@ export default class Confirm extends Component {
             </span>
           </div>
         ) : null}
-        {this.props.match.params.mode === "preorder" ? qr_section : null}
+
+        {this.props.match.params.mode === "preorder" &&
+        this.props.app_conf.withPayment === true &&
+        !this.state.showQrCode
+          ? this.renderPayment()
+          : null}
+
+        {this.props.match.params.mode === "preorder" &&
+        this.props.app_conf.withPayment === true &&
+        this.state.showQrCode
+          ? qr_section
+          : null}
+
+        {this.props.match.params.mode === "preorder" &&
+        !this.props.app_conf.withPayment
+          ? qr_section
+          : null}
+
         <div className="confirm__order-list__title">
           <span className="confirm__order-list__title-text">
             {this.props.app_conf.your_order_title}
@@ -363,7 +372,6 @@ export default class Confirm extends Component {
             </span>
           </div>
         ) : null}
-        {this.renderPayment()}
       </div>
     );
   }

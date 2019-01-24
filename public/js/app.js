@@ -71832,7 +71832,9 @@ var Confirm = function (_Component) {
       orderId: "",
       tableId: "",
       isShowConfirm: false,
-      paymentMethod: ""
+      paymentMethod: "",
+      order_no: "",
+      showQrCode: false
     };
 
     _this.createQrCode = _this.createQrCode.bind(_this);
@@ -71848,6 +71850,8 @@ var Confirm = function (_Component) {
   _createClass(Confirm, [{
     key: "componentDidMount",
     value: function componentDidMount() {
+      var _this2 = this;
+
       if (this.props.mode === "preorder" && localStorage.getItem("preorderList")) {
         this.setState({
           shoppingCartList: JSON.parse(localStorage.getItem("preorderList"))
@@ -71855,6 +71859,17 @@ var Confirm = function (_Component) {
       } else if (this.props.mode === "table") {
         this.setState({ shoppingCartList: this.props.shoppingCartList });
       }
+
+      console.log(this.props.app_conf);
+
+      Echo.channel("tableOrder").listen("UpdateOrder", function (e) {
+        if (e.orderId == "123456789666undefined") {
+          //this.state.order_no
+          if (e.action === "SUCCEEDED") {
+            _this2.setState({ showQrCode: true });
+          }
+        }
+      });
     }
   }, {
     key: "componentWillReceiveProps",
@@ -71916,7 +71931,7 @@ var Confirm = function (_Component) {
   }, {
     key: "confirmOrder",
     value: function confirmOrder() {
-      var _this2 = this;
+      var _this3 = this;
 
       __WEBPACK_IMPORTED_MODULE_3_axios___default.a.post("/table/public/api/confirm", {
         orderList: this.state.shoppingCartList,
@@ -71931,8 +71946,8 @@ var Confirm = function (_Component) {
         userId: this.props.userId
       }).then(function (res) {
         // todo:: set it to app.state
-        _this2.props.updateHistoryCartList(res.data.historyList);
-        _this2.props.history.push("/table/public/complete/" + _this2.props.match.params.tableId + "/" + _this2.props.match.params.orderId);
+        _this3.props.updateHistoryCartList(res.data.historyList);
+        _this3.props.history.push("/table/public/complete/" + _this3.props.match.params.tableId + "/" + _this3.props.match.params.orderId);
       }).catch(function (err) {
         alert(err.reponse.data);
       });
@@ -71945,50 +71960,35 @@ var Confirm = function (_Component) {
   }, {
     key: "payment",
     value: function payment() {
+      var win = window.open("_blank");
+      var today = new Date();
+      var timestamps = Math.floor(today / 1000);
       __WEBPACK_IMPORTED_MODULE_3_axios___default.a.post("/redpay/public/api/payments/create", {
         version: "1.0",
         mchNo: "77902",
         storeNo: "77911",
-        mchOrderNo: "201815617822464359948002",
-        channel: "ALIPAY",
+        mchOrderNo: "123456789999666" + this.props.match.params.orderId,
+        channel: this.state.paymentMethod,
         payWay: "BUYER_SCAN_TRX_QRCODE",
         currency: "AUD",
-        amount: 0.15,
-        notifyUrl: "http://192.168.1.5/redpay/public/api/listen",
+        amount: this.getTotalPrice(),
+        notifyUrl: "http://kidsnparty.com.au/redpay/public/api/listen",
         returnUrl: "https://wap.redpayments.com.au/pay/success",
         item: "Clothes",
         quantity: 1,
-        timestamp: 153613188,
+        timestamp: timestamps,
         params: '{"buyerId":285502587945850268}',
         sign: "3598365168a172a2e62bdb14c104de9e"
       }).then(function (res) {
-        window.location = res.data.data.qrCode;
+        // this.setState({ order_no: res.data.data.mchOrderNo });
+        console.log("timestamps", timestamps);
+        console.log(res.data);
+        win.location = res.data.data.qrCode;
       });
     }
   }, {
     key: "renderPayment",
     value: function renderPayment() {
-      // <label className="choice-group__content-container">
-      //   <input
-      //     type="checkbox"
-      //     name={this.props.choiceGroup.type}
-      //     value={JSON.stringify(choice)}
-      //     onChange={this.setChoice}
-      //   />
-      //   <span className={this.state.choiceClass.checkMarkWrap}>
-      //     <span
-      //       className={this.state.choiceClass.checkMark}
-      //       style={{
-      //         backgroundImage: `url("/table/public/images/items/${
-      //           choice.image
-      //           }")`
-      //       }}
-      //     />
-      //     <div className={this.state.choiceClass.iconCover} />
-      //   </span>
-      // </label>
-
-      // WECHAT
       return __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement(
         "div",
         { className: "payment-section" },
@@ -72011,7 +72011,7 @@ var Confirm = function (_Component) {
               type: "radio",
               name: "payment_method",
               value: "ALIPAY",
-              onChange: this.handelPaymentMethodChange
+              onChange: this.handlePaymentMethodChange
             }),
             __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement(
               "span",
@@ -72030,7 +72030,7 @@ var Confirm = function (_Component) {
               type: "radio",
               name: "payment_method",
               value: "ALIPAY",
-              onChange: this.handelPaymentMethodChange
+              onChange: this.handlePaymentMethodChange
             }),
             __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement(
               "span",
@@ -72048,7 +72048,10 @@ var Confirm = function (_Component) {
           { className: "payment-section__footer" },
           __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement(
             "button",
-            { className: "payment-section__footer-button" },
+            {
+              onClick: this.payment,
+              className: "payment-section__footer-button"
+            },
             this.props.app_conf.payment_button_label
           )
         )
@@ -72057,7 +72060,7 @@ var Confirm = function (_Component) {
   }, {
     key: "render",
     value: function render() {
-      var _this3 = this;
+      var _this4 = this;
 
       var qr_section = __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement(
         "div",
@@ -72111,7 +72114,7 @@ var Confirm = function (_Component) {
                 "div",
                 {
                   onClick: function onClick() {
-                    _this3.setState({ isShowConfirm: false });
+                    _this4.setState({ isShowConfirm: false });
                   },
                   className: "cancel-button"
                 },
@@ -72125,7 +72128,7 @@ var Confirm = function (_Component) {
             )
           )
         ) : null,
-        this.props.match.params.mode === "preorder" ? __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement(
+        this.props.match.params.mode === "preorder" && this.props.app_conf.withPayment && this.state.showQrCode ? __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement(
           "div",
           { className: "confirm__title" },
           __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement("img", { src: "/table/public/images/layout/icon_confirm.png", alt: "" }),
@@ -72135,7 +72138,9 @@ var Confirm = function (_Component) {
             this.props.app_conf.preorder_confirm_text
           )
         ) : null,
-        this.props.match.params.mode === "preorder" ? qr_section : null,
+        this.props.match.params.mode === "preorder" && this.props.app_conf.withPayment === true && !this.state.showQrCode ? this.renderPayment() : null,
+        this.props.match.params.mode === "preorder" && this.props.app_conf.withPayment === true && this.state.showQrCode ? qr_section : null,
+        this.props.match.params.mode === "preorder" && !this.props.app_conf.withPayment ? qr_section : null,
         __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement(
           "div",
           { className: "confirm__order-list__title" },
@@ -72251,7 +72256,7 @@ var Confirm = function (_Component) {
             "span",
             {
               onClick: function onClick() {
-                _this3.setState({ isShowConfirm: true });
+                _this4.setState({ isShowConfirm: true });
               },
               className: "confirm__footer__button"
             },
@@ -72261,8 +72266,7 @@ var Confirm = function (_Component) {
               this.props.app_conf.confirm_order
             )
           )
-        ) : null,
-        this.renderPayment()
+        ) : null
       );
     }
   }]);

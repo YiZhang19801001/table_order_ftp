@@ -37,6 +37,7 @@ class InitController extends Controller
         $app_conf["QrImageUrl"] = config("app.QrImageUrl");
         $app_conf["lang"] = $language_id;
         $app_conf["countLanguage"] = config("app.countLanguage");
+        $app_conf['withPayment'] = config("app.withPayment");
 
         /**return app_conf to client side */
         return response()->json([
