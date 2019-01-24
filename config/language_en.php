@@ -50,4 +50,8 @@ return [
     'clear_localStorage' => 'clear cart',
     //
     'setting_theme' => 'Theme',
+    //
+    //
+    'payment_button_label' => "Confirm & Pay",
+    'payment_header_title' => 'Payment Method',
 ];

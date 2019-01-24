@@ -56,12 +56,6 @@ export default class App extends Component {
   }
 
   componentWillMount() {
-    if (localStorage.getItem("aupos_language_code")) {
-      this.setState({ lang: localStorage.getItem("aupos_language_code") });
-    } else {
-      localStorage.setItem("aupos_laguage_code", 1);
-    }
-
     Axios.get(
       `/table/public/api/init/${localStorage.getItem("aupos_language_code")}`
     ).then(res => {
@@ -69,6 +63,14 @@ export default class App extends Component {
         app_conf: res.data.app_conf,
         userId: res.data.userId
       });
+      if (localStorage.getItem("aupos_language_code")) {
+        this.setState({ lang: localStorage.getItem("aupos_language_code") });
+      } else {
+        localStorage.setItem(
+          "aupos_laguage_code",
+          res.data.app_conf.default_language
+        );
+      }
     });
   }
   componentDidMount() {

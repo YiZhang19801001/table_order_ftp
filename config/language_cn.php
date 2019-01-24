@@ -50,5 +50,8 @@ return [
     'clear_localStorage' => '清空购物车',
     //
     'setting_theme' => '主题',
+    //
+    'payment_button_label' => "确认支付",
+    'payment_header_title' => '支付方式',
 
 ];

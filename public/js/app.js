@@ -31202,17 +31202,16 @@ var App = function (_Component) {
     value: function componentWillMount() {
       var _this2 = this;
 
-      if (localStorage.getItem("aupos_language_code")) {
-        this.setState({ lang: localStorage.getItem("aupos_language_code") });
-      } else {
-        localStorage.setItem("aupos_laguage_code", 1);
-      }
-
       __WEBPACK_IMPORTED_MODULE_3_axios___default.a.get("/table/public/api/init/" + localStorage.getItem("aupos_language_code")).then(function (res) {
         _this2.setState({
           app_conf: res.data.app_conf,
           userId: res.data.userId
         });
+        if (localStorage.getItem("aupos_language_code")) {
+          _this2.setState({ lang: localStorage.getItem("aupos_language_code") });
+        } else {
+          localStorage.setItem("aupos_laguage_code", res.data.app_conf.default_language);
+        }
       });
     }
   }, {
@@ -71832,13 +71831,17 @@ var Confirm = function (_Component) {
       shoppingCartList: [],
       orderId: "",
       tableId: "",
-      isShowConfirm: false
+      isShowConfirm: false,
+      paymentMethod: ""
     };
 
     _this.createQrCode = _this.createQrCode.bind(_this);
     _this.getOrderItemQuantityTotal = _this.getOrderItemQuantityTotal.bind(_this);
     _this.getTotalPrice = _this.getTotalPrice.bind(_this);
     _this.confirmOrder = _this.confirmOrder.bind(_this);
+    _this.payment = _this.payment.bind(_this);
+    _this.renderPayment = _this.renderPayment.bind(_this);
+    _this.handlePaymentMethodChange = _this.handlePaymentMethodChange.bind(_this);
     return _this;
   }
 
@@ -71927,14 +71930,129 @@ var Confirm = function (_Component) {
         lang: this.props.lang,
         userId: this.props.userId
       }).then(function (res) {
-        // res example: {"historyList":[{"item":{"product_id":5,"name":"\u9c8d\u9c7c\u571f\u9e21\u9505","price":"14.80","upc":"0105","description":null,"image":"default_product.jpg","choices":[{"type_id":9998,"type":"Option","choices":[{"product_ext_id":5195,"name":"\u8d70\u9c7c\u7247","price":"0.00","barcode":"E15","image":"default_taste.png"},{"product_ext_id":5108,"name":"\u7279\u9ebb","price":"0.00","barcode":"E06","image":"default_taste.png"},{"product_ext_id":5104,"name":"\u52a0\u9ebb","price":"0.00","barcode":"E02","image":"default_taste.png"},{"product_ext_id":5105,"name":"\u7279\u8fa3","price":"0.00","barcode":"E03","image":"default_taste.png"},{"product_ext_id":5194,"name":"\u8d70\u8471","price":"0.00","barcode":"E14","image":"default_taste.png"},{"product_ext_id":5103,"name":"\u52a0\u8fa3","price":"0.00","barcode":"E01","image":"default_taste.png"}],"pickedChoice":["{\"product_ext_id\":5108,\"name\":\"\u7279\u9ebb\",\"price\":\"0.00\",\"barcode\":\"E06\",\"image\":\"default_taste.png\"}","{\"product_ext_id\":5104,\"name\":\"\u52a0\u9ebb\",\"price\":\"0.00\",\"barcode\":\"E02\",\"image\":\"default_taste.png\"}"]}],"options":[]},"quantity":1}]}
-
         // todo:: set it to app.state
         _this2.props.updateHistoryCartList(res.data.historyList);
         _this2.props.history.push("/table/public/complete/" + _this2.props.match.params.tableId + "/" + _this2.props.match.params.orderId);
       }).catch(function (err) {
         alert(err.reponse.data);
       });
+    }
+  }, {
+    key: "handlePaymentMethodChange",
+    value: function handlePaymentMethodChange(e) {
+      this.setState({ paymentMethod: e.target.value });
+    }
+  }, {
+    key: "payment",
+    value: function payment() {
+      __WEBPACK_IMPORTED_MODULE_3_axios___default.a.post("/redpay/public/api/payments/create", {
+        version: "1.0",
+        mchNo: "77902",
+        storeNo: "77911",
+        mchOrderNo: "201815617822464359948002",
+        channel: "ALIPAY",
+        payWay: "BUYER_SCAN_TRX_QRCODE",
+        currency: "AUD",
+        amount: 0.15,
+        notifyUrl: "http://192.168.1.5/redpay/public/api/listen",
+        returnUrl: "https://wap.redpayments.com.au/pay/success",
+        item: "Clothes",
+        quantity: 1,
+        timestamp: 153613188,
+        params: '{"buyerId":285502587945850268}',
+        sign: "3598365168a172a2e62bdb14c104de9e"
+      }).then(function (res) {
+        window.location = res.data.data.qrCode;
+      });
+    }
+  }, {
+    key: "renderPayment",
+    value: function renderPayment() {
+      // <label className="choice-group__content-container">
+      //   <input
+      //     type="checkbox"
+      //     name={this.props.choiceGroup.type}
+      //     value={JSON.stringify(choice)}
+      //     onChange={this.setChoice}
+      //   />
+      //   <span className={this.state.choiceClass.checkMarkWrap}>
+      //     <span
+      //       className={this.state.choiceClass.checkMark}
+      //       style={{
+      //         backgroundImage: `url("/table/public/images/items/${
+      //           choice.image
+      //           }")`
+      //       }}
+      //     />
+      //     <div className={this.state.choiceClass.iconCover} />
+      //   </span>
+      // </label>
+
+      // WECHAT
+      return __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement(
+        "div",
+        { className: "payment-section" },
+        __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement(
+          "div",
+          { className: "payment-section__header" },
+          __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement(
+            "span",
+            { className: "payment-section__header-text" },
+            this.props.app_conf.payment_header_title
+          )
+        ),
+        __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement(
+          "div",
+          { className: "payment-section__body" },
+          __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement(
+            "label",
+            { className: "payment-section__radio-label" },
+            __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement("input", {
+              type: "radio",
+              name: "payment_method",
+              value: "ALIPAY",
+              onChange: this.handelPaymentMethodChange
+            }),
+            __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement(
+              "span",
+              { className: "payment-section__check-mark-wrapper" },
+              __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement("img", {
+                className: "payment-section__body-img",
+                src: "/table/public/images/alipay.png",
+                alt: ""
+              })
+            )
+          ),
+          __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement(
+            "label",
+            { className: "payment-section__radio-label" },
+            __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement("input", {
+              type: "radio",
+              name: "payment_method",
+              value: "ALIPAY",
+              onChange: this.handelPaymentMethodChange
+            }),
+            __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement(
+              "span",
+              { className: "payment-section__check-mark-wrapper" },
+              __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement("img", {
+                className: "payment-section__body-img",
+                src: "/table/public/images/wechat.png",
+                alt: ""
+              })
+            )
+          )
+        ),
+        __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement(
+          "div",
+          { className: "payment-section__footer" },
+          __WEBPACK_IMPORTED_MODULE_0_react___default.a.createElement(
+            "button",
+            { className: "payment-section__footer-button" },
+            this.props.app_conf.payment_button_label
+          )
+        )
+      );
     }
   }, {
     key: "render",
@@ -72143,7 +72261,8 @@ var Confirm = function (_Component) {
               this.props.app_conf.confirm_order
             )
           )
-        ) : null
+        ) : null,
+        this.renderPayment()
       );
     }
   }]);

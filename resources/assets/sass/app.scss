@@ -23,6 +23,77 @@ body {
 ::-moz-scrollbar {
   display: none;
 }
+.payment-section__header {
+  height: 28px;
+  background-color: #f1f1f1;
+  line-height: 28px;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-pack: justify;
+  -ms-flex-pack: justify;
+  justify-content: space-between;
+  -webkit-box-align: center;
+  -ms-flex-align: center;
+  align-items: center;
+  padding: 0px 15px;
+}
+.payment-section__header-text {
+  height: 20px;
+  line-height: 20px;
+  font-size: 14px;
+  font-weight: bold;
+  color: #333333;
+}
+.payment-section__body {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+}
+.payment-section__body input {
+  opacity: 0;
+  position: absolute;
+}
+.payment-section__check-mark-wrapper {
+  background-color: white;
+  height: 52px;
+  width: 126px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 3px;
+  border: 1px solid #f1f1f1;
+}
+.payment-section__body-img {
+  width: 120px;
+  background-color: white;
+  border-radius: 2px;
+  padding: 3px;
+  height: 46px;
+}
+.payment-section__body input:checked ~ .payment-section__check-mark-wrapper {
+  background-color: $yellow;
+}
+.payment-section__footer {
+  display: flex;
+  padding: 10px 15px;
+  justify-content: flex-end;
+  margin-bottom: 50px;
+}
+.payment-section__footer-button {
+  width: 99px;
+  line-height: 28px;
+  height: 28px;
+  border-radius: 3px;
+  background-color: #ffba2d;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+  text-decoration: none;
+  border: none;
+}
 .order {
   background-color: $grey_1;
   .main {

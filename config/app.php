@@ -15,7 +15,7 @@ return [
     // default language setting [1] = cn [2] = en
     'default_language' => 1,
     // count how many language is available if equal(1) do not show the language switch button
-    'countLanguage' => 1,
+    'countLanguage' => 2,
 
 /** End */
 

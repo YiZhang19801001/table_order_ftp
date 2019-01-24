@@ -14,13 +14,17 @@ export default class Confirm extends Component {
       shoppingCartList: [],
       orderId: "",
       tableId: "",
-      isShowConfirm: false
+      isShowConfirm: false,
+      paymentMethod: ""
     };
 
     this.createQrCode = this.createQrCode.bind(this);
     this.getOrderItemQuantityTotal = this.getOrderItemQuantityTotal.bind(this);
     this.getTotalPrice = this.getTotalPrice.bind(this);
     this.confirmOrder = this.confirmOrder.bind(this);
+    this.payment = this.payment.bind(this);
+    this.renderPayment = this.renderPayment.bind(this);
+    this.handlePaymentMethodChange = this.handlePaymentMethodChange.bind(this);
   }
 
   componentDidMount() {
@@ -34,6 +38,38 @@ export default class Confirm extends Component {
     } else if (this.props.mode === "table") {
       this.setState({ shoppingCartList: this.props.shoppingCartList });
     }
+
+    Echo.channel("tableOrder").listen("payment", e => {
+      if (e.orderId == this.props.orderId && e.userId !== this.props.userId) {
+        if (e.action == "update") {
+          Axios.post(`/table/public/api/initcart`, {
+            order_id: this.props.orderId,
+            cdt: this.props.cdt,
+            v: this.props.v,
+            table_id: this.props.tableNumber,
+            lang: localStorage.getItem("aupos_language_code")
+          })
+            .then(res => {
+              // this.setState({ shoppingCartList: res.data.pending_list });
+              this.props.updateOrderList(res.data.pendingList);
+              this.props.updateHistoryCartList(res.data.historyList);
+              // this.setState({ orderShoppingCartList: res.data.ordered_list });
+            })
+            .catch(err => {
+              window.location.reload();
+            });
+        } else {
+          this.props.updateShoppingCartList(
+            false,
+            e.orderItem,
+            "table",
+            e.action,
+            this.props.orderId,
+            this.props.tableNumber
+          );
+        }
+      }
+    });
   }
 
   componentWillReceiveProps(newProps) {
@@ -106,8 +142,6 @@ export default class Confirm extends Component {
       userId: this.props.userId
     })
       .then(res => {
-        // res example: {"historyList":[{"item":{"product_id":5,"name":"\u9c8d\u9c7c\u571f\u9e21\u9505","price":"14.80","upc":"0105","description":null,"image":"default_product.jpg","choices":[{"type_id":9998,"type":"Option","choices":[{"product_ext_id":5195,"name":"\u8d70\u9c7c\u7247","price":"0.00","barcode":"E15","image":"default_taste.png"},{"product_ext_id":5108,"name":"\u7279\u9ebb","price":"0.00","barcode":"E06","image":"default_taste.png"},{"product_ext_id":5104,"name":"\u52a0\u9ebb","price":"0.00","barcode":"E02","image":"default_taste.png"},{"product_ext_id":5105,"name":"\u7279\u8fa3","price":"0.00","barcode":"E03","image":"default_taste.png"},{"product_ext_id":5194,"name":"\u8d70\u8471","price":"0.00","barcode":"E14","image":"default_taste.png"},{"product_ext_id":5103,"name":"\u52a0\u8fa3","price":"0.00","barcode":"E01","image":"default_taste.png"}],"pickedChoice":["{\"product_ext_id\":5108,\"name\":\"\u7279\u9ebb\",\"price\":\"0.00\",\"barcode\":\"E06\",\"image\":\"default_taste.png\"}","{\"product_ext_id\":5104,\"name\":\"\u52a0\u9ebb\",\"price\":\"0.00\",\"barcode\":\"E02\",\"image\":\"default_taste.png\"}"]}],"options":[]},"quantity":1}]}
-
         // todo:: set it to app.state
         this.props.updateHistoryCartList(res.data.historyList);
         this.props.history.push(
@@ -121,6 +155,80 @@ export default class Confirm extends Component {
       });
   }
 
+  handlePaymentMethodChange(e) {
+    this.setState({ paymentMethod: e.target.value });
+  }
+
+  payment() {
+    Axios.post(`/redpay/public/api/payments/create`, {
+      version: "1.0",
+      mchNo: "77902",
+      storeNo: "77911",
+      mchOrderNo: "201815617822464359948002",
+      channel: "ALIPAY",
+      payWay: "BUYER_SCAN_TRX_QRCODE",
+      currency: "AUD",
+      amount: this.getTotalPrice(),
+      notifyUrl: "http://192.168.1.5/redpay/public/api/listen",
+      returnUrl: "https://wap.redpayments.com.au/pay/success",
+      item: "Clothes",
+      quantity: 1,
+      timestamp: 153613188,
+      params: '{"buyerId":285502587945850268}',
+      sign: "3598365168a172a2e62bdb14c104de9e"
+    }).then(res => {
+      window.location = res.data.data.qrCode;
+    });
+  }
+
+  renderPayment() {
+    return (
+      <div className="payment-section">
+        <div className="payment-section__header">
+          <span className="payment-section__header-text">
+            {this.props.app_conf.payment_header_title}
+          </span>
+        </div>
+        <div className="payment-section__body">
+          <label className="payment-section__radio-label">
+            <input
+              type="radio"
+              name="payment_method"
+              value="ALIPAY"
+              onChange={this.handelPaymentMethodChange}
+            />
+            <span className="payment-section__check-mark-wrapper">
+              <img
+                className="payment-section__body-img"
+                src="/table/public/images/alipay.png"
+                alt=""
+              />
+            </span>
+          </label>
+          <label className="payment-section__radio-label">
+            <input
+              type="radio"
+              name="payment_method"
+              value="ALIPAY"
+              onChange={this.handelPaymentMethodChange}
+            />
+            <span className="payment-section__check-mark-wrapper">
+              <img
+                className="payment-section__body-img"
+                src="/table/public/images/wechat.png"
+                alt=""
+              />
+            </span>
+          </label>
+        </div>
+        <div className="payment-section__footer">
+          <button className="payment-section__footer-button">
+            {this.props.app_conf.payment_button_label}
+          </button>
+        </div>
+      </div>
+    );
+  }
   render() {
     const qr_section = (
       <div className="qrcode-section">
@@ -214,6 +322,7 @@ export default class Confirm extends Component {
               ${this.getTotalPrice()}
             </span>
           </div>
+
           <div className="confirm__back-button-container">
             <Link
               to={
@@ -254,6 +363,7 @@ export default class Confirm extends Component {
             </span>
           </div>
         ) : null}
+        {this.renderPayment()}
       </div>
     );
   }
