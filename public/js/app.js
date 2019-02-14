@@ -71834,7 +71834,8 @@ var Confirm = function (_Component) {
       isShowConfirm: false,
       paymentMethod: "",
       order_no: "",
-      showQrCode: false
+      showQrCode: false,
+      submit: true
     };
 
     _this.createQrCode = _this.createQrCode.bind(_this);
@@ -71859,8 +71860,6 @@ var Confirm = function (_Component) {
       } else if (this.props.mode === "table") {
         this.setState({ shoppingCartList: this.props.shoppingCartList });
       }
-
-      console.log(this.props.app_conf);
 
       Echo.channel("tableOrder").listen("UpdateOrder", function (e) {
         if (e.orderId == "123456789666undefined") {
@@ -71933,24 +71932,28 @@ var Confirm = function (_Component) {
     value: function confirmOrder() {
       var _this3 = this;
 
-      __WEBPACK_IMPORTED_MODULE_3_axios___default.a.post("/table/public/api/confirm", {
-        orderList: this.state.shoppingCartList,
-        order_id: this.props.match.params.orderId,
-        store_id: "4",
-        store_name: "some store",
-        store_url: "http://kidsnparty.com.au/table/public",
-        total: this.getTotalPrice(),
-        paymentMethod: "Dive in",
-        v: this.props.v,
-        lang: this.props.lang,
-        userId: this.props.userId
-      }).then(function (res) {
-        // todo:: set it to app.state
-        _this3.props.updateHistoryCartList(res.data.historyList);
-        _this3.props.history.push("/table/public/complete/" + _this3.props.match.params.tableId + "/" + _this3.props.match.params.orderId);
-      }).catch(function (err) {
-        alert(err.reponse.data);
-      });
+      console.log(this.state.submit);
+      if (this.state.submit) {
+        this.setState({ submit: false });
+        __WEBPACK_IMPORTED_MODULE_3_axios___default.a.post("/table/public/api/confirm", {
+          orderList: this.state.shoppingCartList,
+          order_id: this.props.match.params.orderId,
+          store_id: "4",
+          store_name: "some store",
+          store_url: "http://kidsnparty.com.au/table/public",
+          total: this.getTotalPrice(),
+          paymentMethod: "Dive in",
+          v: this.props.v,
+          lang: this.props.lang,
+          userId: this.props.userId
+        }).then(function (res) {
+          // todo:: set it to app.state
+          _this3.props.updateHistoryCartList(res.data.historyList);
+          _this3.props.history.push("/table/public/complete/" + _this3.props.match.params.tableId + "/" + _this3.props.match.params.orderId);
+        }).catch(function (err) {
+          alert(err.reponse.data);
+        });
+      }
     }
   }, {
     key: "handlePaymentMethodChange",

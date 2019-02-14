@@ -17,7 +17,8 @@ export default class Confirm extends Component {
       isShowConfirm: false,
       paymentMethod: "",
       order_no: "",
-      showQrCode: false
+      showQrCode: false,
+      submit: true
     };
 
     this.createQrCode = this.createQrCode.bind(this);
@@ -40,8 +41,6 @@ export default class Confirm extends Component {
     } else if (this.props.mode === "table") {
       this.setState({ shoppingCartList: this.props.shoppingCartList });
     }
-
-    console.log(this.props.app_conf);
 
     Echo.channel("tableOrder").listen("UpdateOrder", e => {
       if (e.orderId == "123456789666undefined") {
@@ -110,30 +109,34 @@ export default class Confirm extends Component {
   }
 
   confirmOrder() {
-    Axios.post(`/table/public/api/confirm`, {
-      orderList: this.state.shoppingCartList,
-      order_id: this.props.match.params.orderId,
-      store_id: "4",
-      store_name: "some store",
-      store_url: "http://kidsnparty.com.au/table/public",
-      total: this.getTotalPrice(),
-      paymentMethod: "Dive in",
-      v: this.props.v,
-      lang: this.props.lang,
-      userId: this.props.userId
-    })
-      .then(res => {
-        // todo:: set it to app.state
-        this.props.updateHistoryCartList(res.data.historyList);
-        this.props.history.push(
-          `/table/public/complete/${this.props.match.params.tableId}/${
-            this.props.match.params.orderId
-          }`
-        );
+    console.log(this.state.submit);
+    if (this.state.submit) {
+      this.setState({ submit: false });
+      Axios.post(`/table/public/api/confirm`, {
+        orderList: this.state.shoppingCartList,
+        order_id: this.props.match.params.orderId,
+        store_id: "4",
+        store_name: "some store",
+        store_url: "http://kidsnparty.com.au/table/public",
+        total: this.getTotalPrice(),
+        paymentMethod: "Dive in",
+        v: this.props.v,
+        lang: this.props.lang,
+        userId: this.props.userId
       })
-      .catch(err => {
-        alert(err.reponse.data);
-      });
+        .then(res => {
+          // todo:: set it to app.state
+          this.props.updateHistoryCartList(res.data.historyList);
+          this.props.history.push(
+            `/table/public/complete/${this.props.match.params.tableId}/${
+              this.props.match.params.orderId
+            }`
+          );
+        })
+        .catch(err => {
+          alert(err.reponse.data);
+        });
+    }
   }
 
   handlePaymentMethodChange(e) {
